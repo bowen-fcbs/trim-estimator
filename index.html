@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrimWorks Estimator — Interior Trim, Millwork & Doors</title>
+<style>
+  :root{
+    --bg:#f4f2ee; --panel:#ffffff; --ink:#2b2622; --muted:#8a8178;
+    --accent:#8b5e34; --accent-dark:#6e4724; --line:#e3ded7;
+    --green:#3d7a4a; --red:#b04a3a; --gold:#c9a227;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--ink); font-size:15px;}
+  header{background:var(--ink); color:#fff; padding:14px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  header h1{font-size:20px; font-weight:600; letter-spacing:.5px;}
+  header h1 span{color:var(--gold);}
+  header .tag{color:#bbb; font-size:13px;}
+  nav{margin-left:auto; display:flex; gap:8px;}
+  nav button{background:transparent; color:#ddd; border:1px solid #555; border-radius:6px; padding:7px 14px; cursor:pointer; font-size:14px;}
+  nav button.active,nav button:hover{background:var(--accent); border-color:var(--accent); color:#fff;}
+  main{max-width:1200px; margin:0 auto; padding:20px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:18px;}
+  .panel h2{font-size:16px; margin-bottom:12px; color:var(--accent-dark); display:flex; align-items:center; gap:8px;}
+  .grid{display:grid; gap:12px;}
+  .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;} .g4{grid-template-columns:repeat(4,1fr);}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:3px; text-transform:uppercase; letter-spacing:.4px;}
+  input,select,textarea{width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:14px; background:#fff; color:var(--ink); font-family:inherit;}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent); outline-offset:-1px;}
+  button.btn{background:var(--accent); color:#fff; border:none; border-radius:6px; padding:9px 16px; cursor:pointer; font-size:14px; font-weight:600;}
+  button.btn:hover{background:var(--accent-dark);}
+  button.btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--accent);}
+  button.btn.danger{background:transparent; color:var(--red); border:1px solid var(--red); font-weight:400; padding:5px 10px; font-size:13px;}
+  button.btn.small{padding:5px 12px; font-size:13px;}
+  table{width:100%; border-collapse:collapse; font-size:14px;}
+  th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); padding:8px 8px 6px; border-bottom:2px solid var(--line);}
+  td{padding:8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  td input,td select{padding:6px 8px; font-size:13px;}
+  .num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .totals{margin-left:auto; max-width:380px;}
+  .totals .row{display:flex; justify-content:space-between; padding:6px 4px; font-size:14px;}
+  .totals .row.grand{border-top:2px solid var(--ink); margin-top:6px; padding-top:10px; font-size:19px; font-weight:700;}
+  .totals .row .lbl{color:var(--muted);}
+  .est-card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; cursor:pointer; transition:box-shadow .15s;}
+  .est-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);}
+  .est-card h3{font-size:16px;} .est-card .meta{color:var(--muted); font-size:13px; margin-top:4px;}
+  .est-card .amt{font-size:20px; font-weight:700; color:var(--accent-dark); margin-top:8px;}
+  .badge{display:inline-block; font-size:11px; padding:2px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.5px;}
+  .badge.draft{background:#eee; color:#777;} .badge.sent{background:#e7f0fa; color:#2c6299;}
+  .badge.won{background:#e5f2e8; color:var(--green);} .badge.lost{background:#f7e7e4; color:var(--red);}
+  .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px;}
+  .hidden{display:none !important;}
+  .empty{color:var(--muted); text-align:center; padding:30px; font-style:italic;}
+  .section-head{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .section-head h2{margin:0;}
+  .section-head .sub{margin-left:auto; font-weight:700; color:var(--accent-dark);}
+  .help{font-size:13px; color:var(--muted); margin-bottom:10px;}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr;} main{padding:10px;} td input{min-width:60px;}}
+  /* print */
+  @media print{
+    body{background:#fff;} header,nav,.no-print{display:none !important;}
+    main{max-width:100%; padding:0;} .panel{border:none; padding:0; margin-bottom:14px;}
+    #printSheet{display:block !important;}
+    .screen-only{display:none !important;}
+  }
+  #printSheet{display:none; font-size:13px;}
+  #printSheet h1{font-size:22px;} #printSheet .ph{display:flex; justify-content:space-between; border-bottom:3px solid var(--ink); padding-bottom:10px; margin-bottom:14px;}
+  #printSheet table{margin-bottom:10px;} #printSheet h3{margin:14px 0 6px; font-size:14px; color:var(--accent-dark);}
+</style>
+</head>
+<body>
+<header>
+  <h1>Trim<span>Works</span> Estimator</h1>
+  <div class="tag">Interior Trim · Millwork · Doors</div>
+  <nav>
+    <button id="navEst" class="active" onclick="showView('estimates')">Estimates</button>
+    <button id="navCat" onclick="showView('catalog')">Price Catalog</button>
+    <button id="navSet" onclick="showView('settings')">My Company</button>
+  </nav>
+</header>
+<main>
+
+<!-- ============ ESTIMATES LIST ============ -->
+<div id="view-estimates">
+  <div class="toolbar">
+    <button class="btn" onclick="newEstimate()">+ New Estimate</button>
+    <button class="btn ghost" onclick="exportData()">Backup Data</button>
+    <button class="btn ghost" onclick="document.getElementById('importFile').click()">Restore Backup</button>
+    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+  </div>
+  <div id="estList" class="grid g3"></div>
+  <div id="estEmpty" class="empty hidden">No estimates yet. Click “+ New Estimate” to create your first one.</div>
+</div>
+
+<!-- ============ EDITOR ============ -->
+<div id="view-editor" class="hidden">
+  <div class="toolbar">
+    <button class="btn ghost" onclick="backToList()">← All Estimates</button>
+    <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+    <select id="estStatus" style="width:auto" onchange="cur.status=this.value; save(); "></select>
+    <button class="btn danger" style="margin-left:auto" onclick="deleteEstimate()">Delete Estimate</button>
+  </div>
+
+  <div class="panel">
+    <h2>📋 Project & Client</h2>
+    <div class="grid g3">
+      <div><label>Project Name</label><input id="pName" oninput="cur.name=this.value; save()"></div>
+      <div><label>Client Name</label><input id="pClient" oninput="cur.client=this.value; save()"></div>
+      <div><label>Client Phone / Email</label><input id="pContact" oninput="cur.contact=this.value; save()"></div>
+      <div><label>Job Address</label><input id="pAddress" oninput="cur.address=this.value; save()"></div>
+      <div><label>Estimate Date</label><input type="date" id="pDate" onchange="cur.date=this.value; save()"></div>
+      <div><label>Estimate #</label><input id="pNumber" oninput="cur.number=this.value; save()"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-head"><h2>🚪 Doors</h2><span class="sub" id="subDoors"></span></div>
+    <div class="help">Each line = one door type. Set quantity, unit material cost, and labor hours per door.</div>
+    <table id="tblDoors"><thead><tr>
+      <th style="width:24%">Description</th><th>Type</th><th>Size</th><th class="num">Qty</th>
+      <th class="num">Material $/ea</th><th class="num">Hardware $/ea</th><th class="num">Labor hrs/ea</th><th class="num">Line Total</th><th></th>
+    </tr></thead><tbody></tbody></table>
+    <button class="btn small ghost" style="margin-top:10px" onclick="addRow('doors')">+ Add Door</button>
+  </div>
+
+  <div class="panel">
+    <div class="section-head"><h2>📏 Trim & Molding</h2><span class="sub" id="subTrim"></span></div>
+    <div class="help">Measured in linear feet (LF). Waste % is added automatically to material.</div>
+    <table id="tblTrim"><thead><tr>
+      <th style="width:24%">Description</th><th>Profile</th><th class="num">Linear Ft</th>
+      <th class="num">Material $/LF</th><th class="num">Labor hrs/100 LF</th><th class="num">Line Total</th><th></th>
+    </tr></thead><tbody></tbody></table>
+    <button class="btn small ghost" style="margin-top:10px" onclick="addRow('trim')">+ Add Trim Line</button>
+  </div>
+
+  <div class="panel">
+    <div class="section-head"><h2>🪚 Custom Millwork</h2><span class="sub" id="subMill"></span></div>
+    <div class="help">Built-ins, shelving, wainscoting, stair parts, mantels — anything quoted per unit or per job.</div>
+    <table id="tblMill"><thead><tr>
+      <th style="width:30%">Description</th><th class="num">Qty</th>
+      <th class="num">Material $/ea</th><th class="num">Labor hrs/ea</th><th class="num">Line Total</th><th></th>
+    </tr></thead><tbody></tbody></table>
+    <button class="btn small ghost" style="margin-top:10px" onclick="addRow('millwork')">+ Add Millwork Item</button>
+  </div>
+
+  <div class="panel">
+    <h2>⚙️ Rates & Markup (this estimate)</h2>
+    <div class="grid g4">
+      <div><label>Labor Rate $/hr</label><input type="number" id="rLabor" step="1" onchange="cur.laborRate=+this.value; save(); recalc()"></div>
+      <div><label>Material Waste %</label><input type="number" id="rWaste" step="1" onchange="cur.wastePct=+this.value; save(); recalc()"></div>
+      <div><label>Markup / Overhead & Profit %</label><input type="number" id="rMarkup" step="1" onchange="cur.markupPct=+this.value; save(); recalc()"></div>
+      <div><label>Sales Tax % (on materials)</label><input type="number" id="rTax" step="0.1" onchange="cur.taxPct=+this.value; save(); recalc()"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>💰 Estimate Summary</h2>
+    <div class="totals" id="totals"></div>
+  </div>
+
+  <div class="panel">
+    <h2>📝 Notes / Exclusions</h2>
+    <textarea id="pNotes" rows="4" placeholder="e.g. Painting/staining by others. Price valid 30 days." oninput="cur.notes=this.value; save()"></textarea>
+  </div>
+</div>
+
+<!-- ============ CATALOG ============ -->
+<div id="view-catalog" class="hidden">
+  <div class="panel">
+    <h2>Price Catalog — Default Prices</h2>
+    <div class="help">These are starting prices used when you add new lines. Edit them to match your suppliers. Changing them does not affect existing estimates.</div>
+    <h3 style="margin:14px 0 8px; color:var(--accent-dark)">Trim Profiles ($/LF material)</h3>
+    <div class="grid g4" id="catTrim"></div>
+    <h3 style="margin:18px 0 8px; color:var(--accent-dark)">Door Defaults ($/each material)</h3>
+    <div class="grid g4" id="catDoors"></div>
+    <h3 style="margin:18px 0 8px; color:var(--accent-dark)">Default Rates for New Estimates</h3>
+    <div class="grid g4">
+      <div><label>Labor Rate $/hr</label><input type="number" onchange="catalog.laborRate=+this.value; saveCatalog()" id="cLabor"></div>
+      <div><label>Waste %</label><input type="number" onchange="catalog.wastePct=+this.value; saveCatalog()" id="cWaste"></div>
+      <div><label>Markup %</label><input type="number" onchange="catalog.markupPct=+this.value; saveCatalog()" id="cMarkup"></div>
+      <div><label>Tax %</label><input type="number" step="0.1" onchange="catalog.taxPct=+this.value; saveCatalog()" id="cTax"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div id="view-settings" class="hidden">
+  <div class="panel">
+    <h2>My Company — appears on printed estimates</h2>
+    <div class="grid g2">
+      <div><label>Company Name</label><input id="sName" onchange="company.name=this.value; saveCompany()"></div>
+      <div><label>Phone</label><input id="sPhone" onchange="company.phone=this.value; saveCompany()"></div>
+      <div><label>Email</label><input id="sEmail" onchange="company.email=this.value; saveCompany()"></div>
+      <div><label>Address</label><input id="sAddr" onchange="company.address=this.value; saveCompany()"></div>
+      <div><label>License # (optional)</label><input id="sLic" onchange="company.license=this.value; saveCompany()"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRINT SHEET ============ -->
+<div id="printSheet"></div>
+</main>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const money = n => '$' + (n||0).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+const uid = () => Math.random().toString(36).slice(2,10);
+
+// ---------- storage ----------
+const DEFAULT_CATALOG = {
+  laborRate:65, wastePct:10, markupPct:20, taxPct:0,
+  trimProfiles:[
+    {name:'Baseboard 3-1/4" MDF', price:0.95},{name:'Baseboard 5-1/4" MDF', price:1.45},
+    {name:'Baseboard 5-1/4" Poplar', price:2.85},{name:'Casing 2-1/4" MDF', price:0.80},
+    {name:'Casing 3-1/2" Poplar', price:2.40},{name:'Crown 4-5/8" MDF', price:1.85},
+    {name:'Crown 5-1/4" Poplar', price:3.60},{name:'Chair Rail Poplar', price:2.10},
+    {name:'Shoe Molding', price:0.55},{name:'Quarter Round', price:0.60},
+    {name:'Window Stool/Apron', price:3.20},{name:'Panel Molding', price:1.90},
+  ],
+  doorTypes:[
+    {name:'Hollow Core Slab', price:55},{name:'Hollow Core Prehung', price:120},
+    {name:'Solid Core Slab', price:140},{name:'Solid Core Prehung', price:240},
+    {name:'Solid Wood Prehung', price:420},{name:'Double / French Prehung', price:520},
+    {name:'Pocket Door Kit + Door', price:380},{name:'Barn Door + Hardware', price:450},
+    {name:'Bifold (closet)', price:110},{name:'Bypass (closet)', price:160},
+    {name:'Exterior Entry Prehung', price:850},{name:'Custom / Other', price:0},
+  ]
+};
+let catalog  = JSON.parse(localStorage.getItem('tw_catalog')  || 'null') || structuredClone(DEFAULT_CATALOG);
+let company  = JSON.parse(localStorage.getItem('tw_company')  || '{}');
+let estimates= JSON.parse(localStorage.getItem('tw_estimates')|| '[]');
+let cur = null;
+const save = () => { localStorage.setItem('tw_estimates', JSON.stringify(estimates)); };
+const saveCatalog = () => localStorage.setItem('tw_catalog', JSON.stringify(catalog));
+const saveCompany = () => localStorage.setItem('tw_company', JSON.stringify(company));
+
+// ---------- views ----------
+function showView(v){
+  ['estimates','catalog','settings','editor'].forEach(x=>$('view-'+x)?.classList.add('hidden'));
+  $('view-'+v).classList.remove('hidden');
+  $('navEst').classList.toggle('active', v==='estimates'||v==='editor');
+  $('navCat').classList.toggle('active', v==='catalog');
+  $('navSet').classList.toggle('active', v==='settings');
+  if(v==='estimates') renderList();
+  if(v==='catalog') renderCatalog();
+  if(v==='settings') renderSettings();
+}
+
+// ---------- list ----------
+function renderList(){
+  const box=$('estList'); box.innerHTML='';
+  $('estEmpty').classList.toggle('hidden', estimates.length>0);
+  [...estimates].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(e=>{
+    const t=totalsFor(e);
+    const card=document.createElement('div'); card.className='est-card';
+    card.innerHTML=`<span class="badge ${e.status}">${e.status}</span>
+      <h3>${esc(e.name)||'Untitled'}</h3>
+      <div class="meta">${esc(e.client)||'No client'} · ${e.date||''} · #${esc(e.number)||''}</div>
+      <div class="amt">${money(t.grand)}</div>`;
+    card.onclick=()=>openEstimate(e.id);
+    box.appendChild(card);
+  });
+}
+const esc = s => (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function newEstimate(){
+  const n = estimates.length+1;
+  const e = {id:uid(), name:'', client:'', contact:'', address:'', notes:'',
+    number:String(1000+n), date:new Date().toISOString().slice(0,10), status:'draft',
+    laborRate:catalog.laborRate, wastePct:catalog.wastePct, markupPct:catalog.markupPct, taxPct:catalog.taxPct,
+    doors:[], trim:[], millwork:[]};
+  estimates.push(e); save(); openEstimate(e.id);
+}
+function openEstimate(id){
+  cur = estimates.find(e=>e.id===id);
+  showView('editor');
+  $('pName').value=cur.name; $('pClient').value=cur.client; $('pContact').value=cur.contact||'';
+  $('pAddress').value=cur.address||''; $('pDate').value=cur.date; $('pNumber').value=cur.number||'';
+  $('pNotes').value=cur.notes||'';
+  $('rLabor').value=cur.laborRate; $('rWaste').value=cur.wastePct; $('rMarkup').value=cur.markupPct; $('rTax').value=cur.taxPct;
+  $('estStatus').innerHTML=['draft','sent','won','lost'].map(s=>`<option ${s===cur.status?'selected':''}>${s}</option>`).join('');
+  renderRows(); recalc();
+}
+function backToList(){ cur=null; showView('estimates'); }
+function deleteEstimate(){
+  if(!confirm('Delete this estimate? This cannot be undone.')) return;
+  estimates = estimates.filter(e=>e.id!==cur.id); save(); backToList();
+}
+
+// ---------- line items ----------
+function addRow(sec){
+  if(sec==='doors') cur.doors.push({id:uid(), desc:'', type:catalog.doorTypes[3].name, size:'2/8 x 6/8', qty:1, mat:catalog.doorTypes[3].price, hw:35, hrs:1.5});
+  if(sec==='trim'){ const p=catalog.trimProfiles[1]; cur.trim.push({id:uid(), desc:'', profile:p.name, lf:0, mat:p.price, hrsPer100:4}); }
+  if(sec==='millwork') cur.millwork.push({id:uid(), desc:'', qty:1, mat:0, hrs:0});
+  save(); renderRows(); recalc();
+}
+function delRow(sec,id){ cur[sec]=cur[sec].filter(r=>r.id!==id); save(); renderRows(); recalc(); }
+function upd(sec,id,field,val,isNum){
+  const r=cur[sec].find(r=>r.id===id); r[field]=isNum? +val||0 : val;
+  if(sec==='doors'&&field==='type'){ const dt=catalog.doorTypes.find(d=>d.name===val); if(dt&&dt.price) r.mat=dt.price; renderRows(); }
+  if(sec==='trim'&&field==='profile'){ const tp=catalog.trimProfiles.find(p=>p.name===val); if(tp) r.mat=tp.price; renderRows(); }
+  save(); recalc();
+}
+
+function doorLine(r){ return r.qty*(r.mat+r.hw) + r.qty*r.hrs*cur.laborRate; }
+function trimLine(r){ return r.lf*r.mat*(1+cur.wastePct/100) + (r.lf/100)*r.hrsPer100*cur.laborRate; }
+function millLine(r){ return r.qty*r.mat + r.qty*r.hrs*cur.laborRate; }
+
+function renderRows(){
+  const sizes=['2/0 x 6/8','2/4 x 6/8','2/6 x 6/8','2/8 x 6/8','3/0 x 6/8','2/8 x 8/0','3/0 x 8/0','4/0 x 6/8','5/0 x 6/8','6/0 x 6/8','Custom'];
+  $('tblDoors').querySelector('tbody').innerHTML = cur.doors.map(r=>`<tr>
+    <td><input value="${esc(r.desc)}" placeholder="e.g. Bedroom doors" oninput="upd('doors','${r.id}','desc',this.value)"></td>
+    <td><select onchange="upd('doors','${r.id}','type',this.value)">${catalog.doorTypes.map(d=>`<option ${d.name===r.type?'selected':''}>${d.name}</option>`).join('')}</select></td>
+    <td><select onchange="upd('doors','${r.id}','size',this.value)">${sizes.map(s=>`<option ${s===r.size?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td><input class="num" type="number" value="${r.qty}" min="0" onchange="upd('doors','${r.id}','qty',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.mat}" step="1" onchange="upd('doors','${r.id}','mat',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.hw}" step="1" onchange="upd('doors','${r.id}','hw',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.hrs}" step="0.25" onchange="upd('doors','${r.id}','hrs',this.value,1)"></td>
+    <td class="num" id="lt-d-${r.id}"></td>
+    <td><button class="btn danger" onclick="delRow('doors','${r.id}')">✕</button></td></tr>`).join('');
+  $('tblTrim').querySelector('tbody').innerHTML = cur.trim.map(r=>`<tr>
+    <td><input value="${esc(r.desc)}" placeholder="e.g. Main floor base" oninput="upd('trim','${r.id}','desc',this.value)"></td>
+    <td><select onchange="upd('trim','${r.id}','profile',this.value)">${catalog.trimProfiles.map(p=>`<option ${p.name===r.profile?'selected':''}>${p.name}</option>`).join('')}</select></td>
+    <td><input class="num" type="number" value="${r.lf}" min="0" onchange="upd('trim','${r.id}','lf',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.mat}" step="0.05" onchange="upd('trim','${r.id}','mat',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.hrsPer100}" step="0.5" onchange="upd('trim','${r.id}','hrsPer100',this.value,1)"></td>
+    <td class="num" id="lt-t-${r.id}"></td>
+    <td><button class="btn danger" onclick="delRow('trim','${r.id}')">✕</button></td></tr>`).join('');
+  $('tblMill').querySelector('tbody').innerHTML = cur.millwork.map(r=>`<tr>
+    <td><input value="${esc(r.desc)}" placeholder="e.g. Built-in bookcase 8ft" oninput="upd('millwork','${r.id}','desc',this.value)"></td>
+    <td><input class="num" type="number" value="${r.qty}" min="0" onchange="upd('millwork','${r.id}','qty',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.mat}" step="1" onchange="upd('millwork','${r.id}','mat',this.value,1)"></td>
+    <td><input class="num" type="number" value="${r.hrs}" step="0.5" onchange="upd('millwork','${r.id}','hrs',this.value,1)"></td>
+    <td class="num" id="lt-m-${r.id}"></td>
+    <td><button class="btn danger" onclick="delRow('millwork','${r.id}')">✕</button></td></tr>`).join('');
+}
+
+// ---------- math ----------
+function totalsFor(e){
+  const saveCur = cur; cur = e;
+  const matDoors = e.doors.reduce((s,r)=>s+r.qty*(r.mat+r.hw),0);
+  const labDoors = e.doors.reduce((s,r)=>s+r.qty*r.hrs,0)*e.laborRate;
+  const matTrim  = e.trim.reduce((s,r)=>s+r.lf*r.mat*(1+e.wastePct/100),0);
+  const labTrim  = e.trim.reduce((s,r)=>s+(r.lf/100)*r.hrsPer100,0)*e.laborRate;
+  const matMill  = e.millwork.reduce((s,r)=>s+r.qty*r.mat,0);
+  const labMill  = e.millwork.reduce((s,r)=>s+r.qty*r.hrs,0)*e.laborRate;
+  const materials = matDoors+matTrim+matMill;
+  const labor = labDoors+labTrim+labMill;
+  const subtotal = materials+labor;
+  const markup = subtotal*e.markupPct/100;
+  const tax = materials*e.taxPct/100;
+  const grand = subtotal+markup+tax;
+  cur = saveCur;
+  return {materials, labor, subtotal, markup, tax, grand,
+    secDoors:matDoors+labDoors, secTrim:matTrim+labTrim, secMill:matMill+labMill};
+}
+function recalc(){
+  if(!cur) return;
+  cur.doors.forEach(r=>{ const el=$('lt-d-'+r.id); if(el) el.textContent=money(doorLine(r)); });
+  cur.trim.forEach(r=>{ const el=$('lt-t-'+r.id); if(el) el.textContent=money(trimLine(r)); });
+  cur.millwork.forEach(r=>{ const el=$('lt-m-'+r.id); if(el) el.textContent=money(millLine(r)); });
+  const t=totalsFor(cur);
+  $('subDoors').textContent=money(t.secDoors); $('subTrim').textContent=money(t.secTrim); $('subMill').textContent=money(t.secMill);
+  $('totals').innerHTML=`
+    <div class="row"><span class="lbl">Materials</span><span>${money(t.materials)}</span></div>
+    <div class="row"><span class="lbl">Labor</span><span>${money(t.labor)}</span></div>
+    <div class="row"><span class="lbl">Subtotal</span><span>${money(t.subtotal)}</span></div>
+    <div class="row"><span class="lbl">Markup (${cur.markupPct}%)</span><span>${money(t.markup)}</span></div>
+    <div class="row"><span class="lbl">Tax on materials (${cur.taxPct}%)</span><span>${money(t.tax)}</span></div>
+    <div class="row grand"><span>Total Estimate</span><span>${money(t.grand)}</span></div>`;
+  buildPrintSheet(t);
+}
+
+// ---------- print ----------
+function buildPrintSheet(t){
+  const c=company, e=cur;
+  const rows = (arr, fn, cols) => arr.length? `<table><thead><tr>${cols.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${arr.map(fn).join('')}</tbody></table>`:'';
+  $('printSheet').innerHTML = `
+  <div class="ph">
+    <div><h1>${esc(c.name)||'Estimate'}</h1>
+      <div>${esc(c.address)||''}</div><div>${esc(c.phone)||''} ${esc(c.email)||''}</div>
+      ${c.license?`<div>License: ${esc(c.license)}</div>`:''}</div>
+    <div style="text-align:right">
+      <div style="font-size:18px;font-weight:700">ESTIMATE #${esc(e.number)}</div>
+      <div>${e.date}</div></div>
+  </div>
+  <div style="margin-bottom:12px"><strong>Prepared for:</strong> ${esc(e.client)} ${e.contact?'· '+esc(e.contact):''}<br>
+  <strong>Project:</strong> ${esc(e.name)} ${e.address?'· '+esc(e.address):''}</div>
+  ${e.doors.length?'<h3>Doors</h3>':''}
+  ${rows(e.doors, r=>`<tr><td>${esc(r.desc)||esc(r.type)}</td><td>${esc(r.type)}</td><td>${esc(r.size)}</td><td class="num">${r.qty}</td><td class="num">${money(doorLine(r))}</td></tr>`, ['Description','Type','Size','Qty','Total'])}
+  ${e.trim.length?'<h3>Trim & Molding</h3>':''}
+  ${rows(e.trim, r=>`<tr><td>${esc(r.desc)||esc(r.profile)}</td><td>${esc(r.profile)}</td><td class="num">${r.lf} LF</td><td class="num">${money(trimLine(r))}</td></tr>`, ['Description','Profile','Linear Ft','Total'])}
+  ${e.millwork.length?'<h3>Custom Millwork</h3>':''}
+  ${rows(e.millwork, r=>`<tr><td>${esc(r.desc)}</td><td class="num">${r.qty}</td><td class="num">${money(millLine(r))}</td></tr>`, ['Description','Qty','Total'])}
+  <div class="totals">
+    <div class="row"><span class="lbl">Materials</span><span>${money(t.materials)}</span></div>
+    <div class="row"><span class="lbl">Labor</span><span>${money(t.labor)}</span></div>
+    <div class="row"><span class="lbl">Overhead & Profit</span><span>${money(t.markup)}</span></div>
+    <div class="row"><span class="lbl">Tax</span><span>${money(t.tax)}</span></div>
+    <div class="row grand"><span>Total</span><span>${money(t.grand)}</span></div>
+  </div>
+  ${e.notes?`<h3>Notes & Exclusions</h3><div>${esc(e.notes).replace(/\n/g,'<br>')}</div>`:''}
+  <div style="margin-top:30px; display:flex; gap:60px;">
+    <div style="border-top:1px solid #000; flex:1; padding-top:4px;">Accepted by (signature)</div>
+    <div style="border-top:1px solid #000; width:160px; padding-top:4px;">Date</div>
+  </div>`;
+}
+
+// ---------- catalog / settings ----------
+function renderCatalog(){
+  $('catTrim').innerHTML = catalog.trimProfiles.map((p,i)=>`<div><label>${esc(p.name)}</label>
+    <input type="number" step="0.05" value="${p.price}" onchange="catalog.trimProfiles[${i}].price=+this.value; saveCatalog()"></div>`).join('');
+  $('catDoors').innerHTML = catalog.doorTypes.map((d,i)=>`<div><label>${esc(d.name)}</label>
+    <input type="number" step="5" value="${d.price}" onchange="catalog.doorTypes[${i}].price=+this.value; saveCatalog()"></div>`).join('');
+  $('cLabor').value=catalog.laborRate; $('cWaste').value=catalog.wastePct; $('cMarkup').value=catalog.markupPct; $('cTax').value=catalog.taxPct;
+}
+function renderSettings(){
+  $('sName').value=company.name||''; $('sPhone').value=company.phone||''; $('sEmail').value=company.email||'';
+  $('sAddr').value=company.address||''; $('sLic').value=company.license||'';
+}
+
+// ---------- backup ----------
+function exportData(){
+  const blob=new Blob([JSON.stringify({catalog,company,estimates},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='trimworks-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function importData(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=()=>{ try{
+    const d=JSON.parse(fr.result);
+    if(d.estimates) estimates=d.estimates; if(d.catalog) catalog=d.catalog; if(d.company) company=d.company;
+    save(); saveCatalog(); saveCompany(); renderList(); alert('Backup restored!');
+  }catch(e){ alert('Could not read that file.'); } };
+  fr.readAsText(f);
+}
+
+renderList();
+</script>
+</body>
+</html>
