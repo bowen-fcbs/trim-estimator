@@ -107,8 +107,11 @@
       <div><label>Project Name</label><input id="pName" oninput="cur.name=this.value; save()"></div>
       <div><label>Client Name</label><input id="pClient" oninput="cur.client=this.value; save()"></div>
       <div><label>Client Phone / Email</label><input id="pContact" oninput="cur.contact=this.value; save()"></div>
-      <div><label>Job Address</label><input id="pAddress" oninput="cur.address=this.value; save()"></div>
-      <div><label>Estimate Date</label><input type="date" id="pDate" onchange="cur.date=this.value; save()"></div>
+      <div><label>Builder</label><input id="pBuilder" oninput="cur.builder=this.value; save()"></div>
+      <div><label>Salesperson</label><input id="pSales" oninput="cur.salesperson=this.value; save()"></div>
+      <div><label>Lot / Address</label><input id="pAddress" oninput="cur.address=this.value; save()"></div>
+      <div><label>Quote Received Date</label><input type="date" id="pRecv" onchange="cur.recvDate=this.value; save()"></div>
+      <div><label>Quote Submission Date</label><input type="date" id="pDate" onchange="cur.date=this.value; save()"></div>
       <div><label>Estimate #</label><input id="pNumber" oninput="cur.number=this.value; save()"></div>
     </div>
   </div>
@@ -121,6 +124,12 @@
       <th class="num">Material $/ea</th><th class="num">Hardware $/ea</th><th class="num">Labor hrs/ea</th><th class="num">Line Total</th><th></th>
     </tr></thead><tbody></tbody></table>
     <button class="btn small ghost" style="margin-top:10px" onclick="addRow('doors')">+ Add Door</button>
+  </div>
+
+  <div class="panel">
+    <h2>✅ Interior Door Checklist</h2>
+    <div class="help">Spec the door package — same fields as the FCBS Interior Door Checklist. Prints with the estimate so nothing gets missed.</div>
+    <div class="grid g3" id="checklistGrid"></div>
   </div>
 
   <div class="panel">
@@ -235,6 +244,40 @@ const save = () => { localStorage.setItem('tw_estimates', JSON.stringify(estimat
 const saveCatalog = () => localStorage.setItem('tw_catalog', JSON.stringify(catalog));
 const saveCompany = () => localStorage.setItem('tw_company', JSON.stringify(company));
 
+// ---------- interior door checklist (FCBS) ----------
+const CHECKLIST_FIELDS = [
+  ['Configuration', ['Single unit','Bi-hinge unit','Twin unit w/ T-astragal','Pocket','Barn']],
+  ['Core / Material', ['Solid core','Hollow core','Primed stile & rail','Wood specie (note below)']],
+  ['Thickness', ['1-3/8"','1-3/4"']],
+  ['Slab Style', null],
+  ['Panel', ['Flat','Raised','Heavy-raised']],
+  ['Sticking', ['Shaker / square','Bevel','Roman ogee','Ovolo','One-step','Other']],
+  ['Jamb Material', ['Solid pine','Primed FJ','FrameSaver','PVC']],
+  ['Jamb Size', ['4-9/16"','6-9/16"','4-7/8"','6-7/8"','Other']],
+  ['Jamb Type', ['Flat w/ stop','Split','Single rabbet w/ weatherstrip','Double rabbet w/ weatherstrip']],
+  ['Weatherstrip Color', ['Bronze','White','N/A']],
+  ['Threshold', ['Adjustable inswing','ADA','Bumper outswing','None']],
+  ['Hinge Type', ['Radius','Square','Self-closing — 20 min. fire rated','Tectus']],
+  ['Hinge Size', ['3-1/2" for 1-3/8" slab','4" for 1-3/4" slab','340 series','540 series']],
+  ['Catch', ['Ball catch','Hidden magnetic catch','None']],
+  ['Hardware Finish', ['Black','ORB','Satin nickel','Stainless steel','Brass','Satin chrome']],
+  ['Bore', ['Single','Double','None']],
+  ['Backset', ['2-3/8" — most common','2-3/4"','Other']],
+  ['Casing Material', ['FJ pine','Primed FJ','MDF','Solid pine','None']],
+  ['Casing Profile', ['1x flat stock','356','444','445','RB-3','None']],
+];
+function renderChecklist(){
+  cur.checklist = cur.checklist || {};
+  $('checklistGrid').innerHTML = CHECKLIST_FIELDS.map(([label,opts],i)=>{
+    const v = cur.checklist[label]||'';
+    const input = opts
+      ? `<select onchange="updCk('${label.replace(/'/g,"\\'")}',this.value)"><option value=""></option>${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`
+      : `<input value="${esc(v)}" placeholder="e.g. 2-panel shaker" oninput="updCk('${label.replace(/'/g,"\\'")}',this.value)">`;
+    return `<div><label>${label}</label>${input}</div>`;
+  }).join('');
+}
+function updCk(key,val){ cur.checklist[key]=val; save(); recalc(); }
+
 // ---------- views ----------
 function showView(v){
   ['estimates','catalog','settings','editor'].forEach(x=>$('view-'+x)?.classList.add('hidden'));
@@ -267,6 +310,7 @@ const esc = s => (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt
 function newEstimate(){
   const n = estimates.length+1;
   const e = {id:uid(), name:'', client:'', contact:'', address:'', notes:'',
+    builder:'', salesperson:'', recvDate:'', checklist:{},
     number:String(1000+n), date:new Date().toISOString().slice(0,10), status:'draft',
     laborRate:catalog.laborRate, wastePct:catalog.wastePct, markupPct:catalog.markupPct, taxPct:catalog.taxPct,
     doors:[], trim:[], millwork:[]};
@@ -277,6 +321,8 @@ function openEstimate(id){
   showView('editor');
   $('pName').value=cur.name; $('pClient').value=cur.client; $('pContact').value=cur.contact||'';
   $('pAddress').value=cur.address||''; $('pDate').value=cur.date; $('pNumber').value=cur.number||'';
+  $('pBuilder').value=cur.builder||''; $('pSales').value=cur.salesperson||''; $('pRecv').value=cur.recvDate||'';
+  renderChecklist();
   $('pNotes').value=cur.notes||'';
   $('rLabor').value=cur.laborRate; $('rWaste').value=cur.wastePct; $('rMarkup').value=cur.markupPct; $('rTax').value=cur.taxPct;
   $('estStatus').innerHTML=['draft','sent','won','lost'].map(s=>`<option ${s===cur.status?'selected':''}>${s}</option>`).join('');
@@ -386,7 +432,10 @@ function buildPrintSheet(t){
       <div>${e.date}</div></div>
   </div>
   <div style="margin-bottom:12px"><strong>Prepared for:</strong> ${esc(e.client)} ${e.contact?'· '+esc(e.contact):''}<br>
-  <strong>Project:</strong> ${esc(e.name)} ${e.address?'· '+esc(e.address):''}</div>
+  <strong>Project:</strong> ${esc(e.name)} ${e.address?'· '+esc(e.address):''}
+  ${e.builder?`<br><strong>Builder:</strong> ${esc(e.builder)}`:''}
+  ${e.salesperson?` &nbsp; <strong>Salesperson:</strong> ${esc(e.salesperson)}`:''}</div>
+  ${(() => { const ck = Object.entries(e.checklist||{}).filter(([k,v])=>v); return ck.length ? '<h3>Interior Door Specifications</h3><table><tbody>'+ck.map(([k,v])=>`<tr><td style="width:35%"><strong>${esc(k)}</strong></td><td>${esc(v)}</td></tr>`).join('')+'</tbody></table>' : ''; })()}
   ${e.doors.length?'<h3>Doors</h3>':''}
   ${rows(e.doors, r=>`<tr><td>${esc(r.desc)||esc(r.type)}</td><td>${esc(r.type)}</td><td>${esc(r.size)}</td><td class="num">${r.qty}</td><td class="num">${money(doorLine(r))}</td></tr>`, ['Description','Type','Size','Qty','Total'])}
   ${e.trim.length?'<h3>Trim & Molding</h3>':''}
