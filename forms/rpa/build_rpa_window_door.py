@@ -165,10 +165,10 @@ top += GAP
 
 # ---------- pipeline ----------
 cols = [36, 216, 396, 576]
-top = band(top, "PIPELINE")
-top = header_row(top, cols, ["PIPELINE VALUE", "SALES BUDGET", "SALES PROJECTION"], size=7)
+top = band(top, "PIPELINE", "(yearly)")
+top = header_row(top, cols, ["YEARLY PIPELINE VALUE", "YEARLY SALES BUDGET", "YEARLY SALES PROJECTION"], size=7)
 top = input_rows(top, cols, 1, 28, 4, ["pipeline_1", "pipeline_2", "pipeline_3"],
-                 ["Pipeline value", "Sales budget", "Sales projection"], size=10)
+                 ["Yearly pipeline value", "Yearly sales budget", "Yearly sales projection"], size=10)
 top += GAP
 
 # ---------- new starts ----------

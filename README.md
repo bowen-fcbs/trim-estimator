@@ -25,6 +25,6 @@ automatically in your browser. Use **Backup Data** regularly to keep a safe copy
 ## Forms
 - **Window & Door Monthly RPA Review** — `forms/rpa/Four_Corners_Building_Supply_RPA_Window_Door.pdf`.
   Fillable one-page Results / Pipeline / Activity review for the Window & Door department. Same layout
-  as the company Monthly RPA Review, plus an **Orders In & Quotes** section: orders in / written business
+  as the company Monthly RPA Review (Pipeline is yearly), plus an **Orders In & Quotes** section: orders in / written business
   and quoted dollars for the month vs. budget. To change it, edit `forms/rpa/build_rpa_window_door.py`
   and run `python3 forms/rpa/build_rpa_window_door.py` (needs `pip install reportlab`).
