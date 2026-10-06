@@ -21,3 +21,10 @@ automatically in your browser. Use **Backup Data** regularly to keep a safe copy
 2. Go to **Price Catalog** and adjust prices to match your suppliers
 3. Click **+ New Estimate** and start adding doors, trim, and millwork
 4. Click **Print / Save as PDF** to give the estimate to your client
+
+## Commercial quote template
+`templates/Four_Corners_Commercial_Quote_Template.xlsx` is an Excel template for larger
+commercial and multifamily bids (Div 6 / 8 / 10), based on the CSI-section proposal format GCs
+already know from Carter Lumber bids. See the **Instructions** tab inside the workbook.
+To rebuild it after editing the defaults, run `python3 templates/build_quote_template.py`
+(needs `openpyxl`).
