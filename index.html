@@ -36,6 +36,7 @@
   th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); padding:8px 8px 6px; border-bottom:2px solid var(--line);}
   td{padding:8px; border-bottom:1px solid var(--line); vertical-align:middle;}
   td input,td select{padding:6px 8px; font-size:13px;}
+  td input{min-width:60px;} td select{min-width:110px;} td select.sku{min-width:180px;}
   .num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
   .totals{margin-left:auto; max-width:380px;}
   .totals .row{display:flex; justify-content:space-between; padding:6px 4px; font-size:14px;}
@@ -55,7 +56,7 @@
   .section-head h2{margin:0;}
   .section-head .sub{margin-left:auto; font-weight:700; color:var(--accent-dark);}
   .help{font-size:13px; color:var(--muted); margin-bottom:10px;}
-  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr;} main{padding:10px;} td input{min-width:60px;}}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr;} main{padding:10px;} .panel{overflow-x:auto;}}
   /* print */
   @media print{
     body{background:#fff;} header,nav,.no-print{display:none !important;}
@@ -120,7 +121,7 @@
     <div class="section-head"><h2>🚪 Doors</h2><span class="sub" id="subDoors"></span></div>
     <div class="help">Each line = one door type. Set quantity, unit material cost, and labor hours per door.</div>
     <table id="tblDoors"><thead><tr>
-      <th style="width:24%">Description</th><th>Type</th><th>Size</th><th class="num">Qty</th>
+      <th style="width:20%">Description</th><th>Type</th><th>Size</th><th>SO SKU</th><th class="num">Qty</th>
       <th class="num">Material $/ea</th><th class="num">Hardware $/ea</th><th class="num">Labor hrs/ea</th><th class="num">Line Total</th><th></th>
     </tr></thead><tbody></tbody></table>
     <button class="btn small ghost" style="margin-top:10px" onclick="addRow('doors')">+ Add Door</button>
@@ -136,7 +137,7 @@
     <div class="section-head"><h2>📏 Trim & Molding</h2><span class="sub" id="subTrim"></span></div>
     <div class="help">Measured in linear feet (LF). Waste % is added automatically to material.</div>
     <table id="tblTrim"><thead><tr>
-      <th style="width:24%">Description</th><th>Profile</th><th class="num">Linear Ft</th>
+      <th style="width:22%">Description</th><th>Profile</th><th>SO SKU</th><th class="num">Linear Ft</th>
       <th class="num">Material $/LF</th><th class="num">Labor hrs/100 LF</th><th class="num">Line Total</th><th></th>
     </tr></thead><tbody></tbody></table>
     <button class="btn small ghost" style="margin-top:10px" onclick="addRow('trim')">+ Add Trim Line</button>
@@ -146,10 +147,18 @@
     <div class="section-head"><h2>🪚 Custom Millwork</h2><span class="sub" id="subMill"></span></div>
     <div class="help">Built-ins, shelving, wainscoting, stair parts, mantels — anything quoted per unit or per job.</div>
     <table id="tblMill"><thead><tr>
-      <th style="width:30%">Description</th><th class="num">Qty</th>
+      <th style="width:30%">Description</th><th>SO SKU</th><th class="num">Qty</th>
       <th class="num">Material $/ea</th><th class="num">Labor hrs/ea</th><th class="num">Line Total</th><th></th>
     </tr></thead><tbody></tbody></table>
     <button class="btn small ghost" style="margin-top:10px" onclick="addRow('millwork')">+ Add Millwork Item</button>
+  </div>
+
+  <div class="panel">
+    <div class="section-head"><h2>🏷️ Special Order Entry</h2><button class="btn small ghost" style="margin-left:auto" onclick="copyOrder()">Copy Order Lines</button></div>
+    <div class="help">Every line with its SO product code, order quantity (trim includes waste) and unit cost. Copy and paste into the special order.</div>
+    <table id="tblOrder"><thead><tr>
+      <th>Product Code</th><th style="width:40%">Description</th><th class="num">Qty</th><th>UOM</th><th class="num">Unit Cost</th><th class="num">Ext Cost</th>
+    </tr></thead><tbody></tbody></table>
   </div>
 
   <div class="panel">
@@ -189,6 +198,11 @@
       <div><label>Markup %</label><input type="number" onchange="catalog.markupPct=+this.value; saveCatalog()" id="cMarkup"></div>
       <div><label>Tax %</label><input type="number" step="0.1" onchange="catalog.taxPct=+this.value; saveCatalog()" id="cTax"></div>
     </div>
+  </div>
+  <div class="panel">
+    <h2>Special Order SKUs</h2>
+    <div class="help">Product codes for special order lines, by category. Pick one on each door, trim and millwork line.</div>
+    <div class="grid g2" id="catSkus"></div>
   </div>
 </div>
 
@@ -243,6 +257,75 @@ let cur = null;
 const save = () => { localStorage.setItem('tw_estimates', JSON.stringify(estimates)); };
 const saveCatalog = () => localStorage.setItem('tw_catalog', JSON.stringify(catalog));
 const saveCompany = () => localStorage.setItem('tw_company', JSON.stringify(company));
+
+// ---------- special order SKUs (ERP product codes) ----------
+const SO_SKUS = [
+  // [product code, description, sell UOM, category]
+  ['SO ATRIUM','SPECIAL ORDER ATRIUM WINDOW','ea','Windows'],
+  ['SO ES WINDOWS','SPECIAL ORDER ES WINDOW','ea','Windows'],
+  ['SO JELD-WEN','SPECIAL ORDER JELD-WEN WINDOW','ea','Windows'],
+  ['SO KOLBE','SPECIAL ORDER KOLBE WINDOW','ea','Windows'],
+  ['SO LEPAGE','SPECIAL ORDER LEPAGE WINDOW','ea','Windows'],
+  ['SO MISC WOOD WINDOW','SPECIAL ORDER MISC WOOD WINDOW','ea','Windows'],
+  ['SO PGT','SPECIAL ORDER PGT WINDOW','ea','Windows'],
+  ['SO PLYGEM','SPECIAL ORDER PLYGEM WINDOW','ea','Windows'],
+  ['SO QUAKER','SPECIAL ORDER QUAKER WINDOW','ea','Windows'],
+  ['SO QUARTZ','SPECIAL ORDER QUARTZ WINDOW','ea','Windows'],
+  ['SO SIMONTON','SPECIAL ORDER SIMONTON WINDOW','ea','Windows'],
+  ['SO WINDSOR','SPECIAL ORDER WINDSOR WINDOW','ea','Windows'],
+  ['SO YKK','SPECIAL ORDER YKK WINDOW','ea','Windows'],
+  ['SO WINDOW PARTS','SPECIAL ORDER WINDOW PARTS','ea','Windows'],
+  ['SO COMMERCIAL JELD-WEN WINDOW','SPECIAL ORDER COMMERCIAL JELD-WEN WINDOW','ea','Windows'],
+  ['SO COMMERCIAL PGT WINDOW','SPECIAL ORDER COMMERCIAL PGT WINDOW','ea','Windows'],
+  ['SO COMMERCIAL MISC WINDOW','SPECIAL ORDER COMMERCIAL MISC WINDOW','ea','Windows'],
+  ['SO COMMERCIAL WINDOW PARTS','SPECIAL ORDER COMMERCIAL WINDOW PARTS','ea','Windows'],
+  ['SO INT DOOR','SPECIAL ORDER INTERIOR DOOR','ea','Doors'],
+  ['SO INTERIOR DOOR','SPECIAL ORDER INTERIOR DOOR','ea','Doors'],
+  ['SO COMMERCIAL INT DOOR','SPECIAL ORDER COMMERCIAL INTERIOR DOOR','ea','Doors'],
+  ['SO EXT DOOR','SPECIAL ORDER EXTERIOR DOOR','ea','Doors'],
+  ['SO EXTERIOR DOOR','SPECIAL ORDER EXTERIOR DOOR','ea','Doors'],
+  ['SO EXT FIBERGLASS DOOR','SPECIAL ORDER EXTERIOR FIBERGLASS DOOR','ea','Doors'],
+  ['SO EXT STEEL DOOR','SPECIAL ORDER EXTERIOR STEEL DOOR','ea','Doors'],
+  ['SO EXT WOOD DOOR','SPECIAL ORDER EXTERIOR WOOD DOOR','ea','Doors'],
+  ['SO EXT ORIGIN DOOR','SPECIAL ORDER EXTERIOR ORIGIN DOOR','ea','Doors'],
+  ['SO EXT MISC MULTI SLIDE DOOR','SPECIAL ORDER EXTERIOR MISC MULTI SLIDE DOOR','ea','Doors'],
+  ['SO COMMERCIAL EXT DOOR','SPECIAL ORDER COMMERCIAL EXTERIOR DOOR','ea','Doors'],
+  ['SO DOOR HARDWARE','SPECIAL ORDER DOOR HARDWARE','ea','Doors'],
+  ['SO MILLWORK (EACH)','SPECIAL ORDER MILLWORK (EACH)','ea','Millwork'],
+  ['SO MILLWORK (LF)','SPECIAL ORDER MILLWORK (LF)','LF-1','Millwork'],
+  ['SO MILLWORK (BF)','SPECIAL ORDER MILLWORK (BF)','BF-1','Millwork'],
+  ['SO AW MILLWORK (EACH)','SPECIAL ORDER AW MILLWORK (EACH)','ea','Millwork'],
+  ['SO MOULDER (LF)','SPECIAL ORDER MOULDER (LF)','LF-1','Millwork'],
+  ['SO S4S','SPECIAL ORDER S4S','LF-1','Millwork'],
+  ['SO PVC','SPECIAL ORDER PVC','ea','Millwork'],
+  ['SO PRIMER (LF)','SPECIAL ORDER PRIMER (LF)','ea','Millwork'],
+  ['SO MANTIS','SPECIAL ORDER MANTIS CNC','ea','Millwork'],
+  ['SO AW KNIFE','SPECIAL ORDER STOCK KNIFE','ea','Millwork'],
+  ['SO HARDWOOD','SPECIAL ORDER HARDWOOD','ea','Lumber & Panels'],
+  ['SO MAPLE','SPECIAL ORDER MAPLE','ea','Lumber & Panels'],
+  ['SO YELLOW PINE','SPECIAL ORDER YELLOW PINE','ea','Lumber & Panels'],
+  ['SO TREATED','SPECIAL ORDER TREATED','ea','Lumber & Panels'],
+  ['SO IPE','SPECIAL ORDER IPE','ea','Lumber & Panels'],
+  ['SO GARAPA','SPECIAL ORDER GARAPA','ea','Lumber & Panels'],
+  ['SO PANELS','SPECIAL ORDER PANELS','ea','Lumber & Panels'],
+  ['SO LUMBER-PC','SPECIAL ORDER LUMBER-PC','ea','Lumber & Panels'],
+  ['SO EWP','SPECIAL ORDER EWP PACKAGE','ea','Structural'],
+  ['SO TRUSSES','SPECIAL ORDER TRUSS PACKAGE','ea','Structural'],
+  ['SO STEEL','SPECIAL ORDER STEEL','ea','Structural'],
+  ['SO SHINGLES','SPECIAL ORDER SHINGLES','ea','Roofing'],
+  ['SO SHINGLES-PC','SPECIAL ORDER SHINGLES-PC','ea','Roofing'],
+  ['SO ROOF SHAKE','SPECIAL ORDER ROOF SHAKE','ea','Roofing'],
+  ['SO ROOF SHAKE-PC','SPECIAL ORDER ROOF SHAKE-PC','ea','Roofing'],
+  ['SO MISC','SPECIAL ORDER MISC ITEMS','ea','Misc'],
+  ['SO MISC - AW','SPECIAL ORDER MISC ITEM - AW','ea','Misc'],
+];
+const SKU_GROUPS = [...new Set(SO_SKUS.map(s=>s[3]))];
+const skuInfo = code => SO_SKUS.find(s=>s[0]===code) || [code,'','ea',''];
+function defaultSku(sec,r){
+  if(sec==='doors') return /exterior/i.test(r.type) ? 'SO EXT DOOR' : 'SO INT DOOR';
+  return sec==='trim' ? 'SO MILLWORK (LF)' : 'SO MILLWORK (EACH)';
+}
+const skuSelect = (sec,r) => `<select class="sku" onchange="upd('${sec}','${r.id}','sku',this.value)">${SKU_GROUPS.map(g=>`<optgroup label="${g}">${SO_SKUS.filter(s=>s[3]===g).map(([c,d])=>`<option value="${c}" title="${d}" ${c===r.sku?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}</select>`;
 
 // ---------- interior door checklist (FCBS) ----------
 const CHECKLIST_FIELDS = [
@@ -322,6 +405,7 @@ function openEstimate(id){
   $('pName').value=cur.name; $('pClient').value=cur.client; $('pContact').value=cur.contact||'';
   $('pAddress').value=cur.address||''; $('pDate').value=cur.date; $('pNumber').value=cur.number||'';
   $('pBuilder').value=cur.builder||''; $('pSales').value=cur.salesperson||''; $('pRecv').value=cur.recvDate||'';
+  ['doors','trim','millwork'].forEach(sec=>cur[sec].forEach(r=>{ r.sku = r.sku || defaultSku(sec,r); }));
   renderChecklist();
   $('pNotes').value=cur.notes||'';
   $('rLabor').value=cur.laborRate; $('rWaste').value=cur.wastePct; $('rMarkup').value=cur.markupPct; $('rTax').value=cur.taxPct;
@@ -336,15 +420,15 @@ function deleteEstimate(){
 
 // ---------- line items ----------
 function addRow(sec){
-  if(sec==='doors') cur.doors.push({id:uid(), desc:'', type:catalog.doorTypes[3].name, size:'2/8 x 6/8', qty:1, mat:catalog.doorTypes[3].price, hw:35, hrs:1.5});
-  if(sec==='trim'){ const p=catalog.trimProfiles[1]; cur.trim.push({id:uid(), desc:'', profile:p.name, lf:0, mat:p.price, hrsPer100:4}); }
-  if(sec==='millwork') cur.millwork.push({id:uid(), desc:'', qty:1, mat:0, hrs:0});
+  if(sec==='doors'){ const d=catalog.doorTypes[3]; cur.doors.push({id:uid(), desc:'', type:d.name, size:'2/8 x 6/8', qty:1, mat:d.price, hw:35, hrs:1.5, sku:defaultSku('doors',{type:d.name})}); }
+  if(sec==='trim'){ const p=catalog.trimProfiles[1]; cur.trim.push({id:uid(), desc:'', profile:p.name, lf:0, mat:p.price, hrsPer100:4, sku:defaultSku('trim')}); }
+  if(sec==='millwork') cur.millwork.push({id:uid(), desc:'', qty:1, mat:0, hrs:0, sku:defaultSku('millwork')});
   save(); renderRows(); recalc();
 }
 function delRow(sec,id){ cur[sec]=cur[sec].filter(r=>r.id!==id); save(); renderRows(); recalc(); }
 function upd(sec,id,field,val,isNum){
   const r=cur[sec].find(r=>r.id===id); r[field]=isNum? +val||0 : val;
-  if(sec==='doors'&&field==='type'){ const dt=catalog.doorTypes.find(d=>d.name===val); if(dt&&dt.price) r.mat=dt.price; renderRows(); }
+  if(sec==='doors'&&field==='type'){ const dt=catalog.doorTypes.find(d=>d.name===val); if(dt&&dt.price) r.mat=dt.price; r.sku=defaultSku('doors',r); renderRows(); }
   if(sec==='trim'&&field==='profile'){ const tp=catalog.trimProfiles.find(p=>p.name===val); if(tp) r.mat=tp.price; renderRows(); }
   save(); recalc();
 }
@@ -359,6 +443,7 @@ function renderRows(){
     <td><input value="${esc(r.desc)}" placeholder="e.g. Bedroom doors" oninput="upd('doors','${r.id}','desc',this.value)"></td>
     <td><select onchange="upd('doors','${r.id}','type',this.value)">${catalog.doorTypes.map(d=>`<option ${d.name===r.type?'selected':''}>${d.name}</option>`).join('')}</select></td>
     <td><select onchange="upd('doors','${r.id}','size',this.value)">${sizes.map(s=>`<option ${s===r.size?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td>${skuSelect('doors',r)}</td>
     <td><input class="num" type="number" value="${r.qty}" min="0" onchange="upd('doors','${r.id}','qty',this.value,1)"></td>
     <td><input class="num" type="number" value="${r.mat}" step="1" onchange="upd('doors','${r.id}','mat',this.value,1)"></td>
     <td><input class="num" type="number" value="${r.hw}" step="1" onchange="upd('doors','${r.id}','hw',this.value,1)"></td>
@@ -368,6 +453,7 @@ function renderRows(){
   $('tblTrim').querySelector('tbody').innerHTML = cur.trim.map(r=>`<tr>
     <td><input value="${esc(r.desc)}" placeholder="e.g. Main floor base" oninput="upd('trim','${r.id}','desc',this.value)"></td>
     <td><select onchange="upd('trim','${r.id}','profile',this.value)">${catalog.trimProfiles.map(p=>`<option ${p.name===r.profile?'selected':''}>${p.name}</option>`).join('')}</select></td>
+    <td>${skuSelect('trim',r)}</td>
     <td><input class="num" type="number" value="${r.lf}" min="0" onchange="upd('trim','${r.id}','lf',this.value,1)"></td>
     <td><input class="num" type="number" value="${r.mat}" step="0.05" onchange="upd('trim','${r.id}','mat',this.value,1)"></td>
     <td><input class="num" type="number" value="${r.hrsPer100}" step="0.5" onchange="upd('trim','${r.id}','hrsPer100',this.value,1)"></td>
@@ -375,6 +461,7 @@ function renderRows(){
     <td><button class="btn danger" onclick="delRow('trim','${r.id}')">✕</button></td></tr>`).join('');
   $('tblMill').querySelector('tbody').innerHTML = cur.millwork.map(r=>`<tr>
     <td><input value="${esc(r.desc)}" placeholder="e.g. Built-in bookcase 8ft" oninput="upd('millwork','${r.id}','desc',this.value)"></td>
+    <td>${skuSelect('millwork',r)}</td>
     <td><input class="num" type="number" value="${r.qty}" min="0" onchange="upd('millwork','${r.id}','qty',this.value,1)"></td>
     <td><input class="num" type="number" value="${r.mat}" step="1" onchange="upd('millwork','${r.id}','mat',this.value,1)"></td>
     <td><input class="num" type="number" value="${r.hrs}" step="0.5" onchange="upd('millwork','${r.id}','hrs',this.value,1)"></td>
@@ -415,7 +502,29 @@ function recalc(){
     <div class="row"><span class="lbl">Markup (${cur.markupPct}%)</span><span>${money(t.markup)}</span></div>
     <div class="row"><span class="lbl">Tax on materials (${cur.taxPct}%)</span><span>${money(t.tax)}</span></div>
     <div class="row grand"><span>Total Estimate</span><span>${money(t.grand)}</span></div>`;
+  const ol=orderLines(cur);
+  $('tblOrder').querySelector('tbody').innerHTML = ol.length ? ol.map(l=>`<tr>
+    <td><strong>${esc(l.sku)}</strong></td><td>${esc(l.desc)}</td><td class="num">${l.qty}</td><td>${esc(l.uom)}</td>
+    <td class="num">${money(l.cost)}</td><td class="num">${money(l.qty*l.cost)}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">Add doors, trim or millwork above.</td></tr>';
   buildPrintSheet(t);
+}
+
+// ---------- special order entry ----------
+function orderLines(e){
+  const out=[], add=(sku,desc,qty,cost)=>out.push({sku, desc, qty, uom:skuInfo(sku)[2], cost});
+  e.doors.forEach(r=>{ if(!r.qty) return;
+    add(r.sku, [r.desc,r.type,r.size].filter(Boolean).join(' · '), r.qty, r.mat);
+    if(r.hw) add('SO DOOR HARDWARE', 'Hardware · '+(r.desc||r.type), r.qty, r.hw); });
+  e.trim.forEach(r=>{ if(r.lf) add(r.sku, [r.desc,r.profile].filter(Boolean).join(' · '), Math.ceil(+(r.lf*(1+e.wastePct/100)).toFixed(4)), r.mat); });
+  e.millwork.forEach(r=>{ if(r.qty) add(r.sku, r.desc, r.qty, r.mat); });
+  return out;
+}
+function copyOrder(){
+  const txt=['Product Code\tDescription\tQty\tUOM\tUnit Cost',
+    ...orderLines(cur).map(l=>[l.sku,l.desc,l.qty,l.uom,l.cost.toFixed(2)].join('\t'))].join('\n');
+  navigator.clipboard.writeText(txt).then(()=>alert('Order lines copied. Paste into Excel or the order screen.'),
+    ()=>alert('Could not copy. Select the table and copy it by hand.'));
 }
 
 // ---------- print ----------
@@ -437,11 +546,11 @@ function buildPrintSheet(t){
   ${e.salesperson?` &nbsp; <strong>Salesperson:</strong> ${esc(e.salesperson)}`:''}</div>
   ${(() => { const ck = Object.entries(e.checklist||{}).filter(([k,v])=>v); return ck.length ? '<h3>Interior Door Specifications</h3><table><tbody>'+ck.map(([k,v])=>`<tr><td style="width:35%"><strong>${esc(k)}</strong></td><td>${esc(v)}</td></tr>`).join('')+'</tbody></table>' : ''; })()}
   ${e.doors.length?'<h3>Doors</h3>':''}
-  ${rows(e.doors, r=>`<tr><td>${esc(r.desc)||esc(r.type)}</td><td>${esc(r.type)}</td><td>${esc(r.size)}</td><td class="num">${r.qty}</td><td class="num">${money(doorLine(r))}</td></tr>`, ['Description','Type','Size','Qty','Total'])}
+  ${rows(e.doors, r=>`<tr><td>${esc(r.sku)}</td><td>${esc(r.desc)||esc(r.type)}</td><td>${esc(r.type)}</td><td>${esc(r.size)}</td><td class="num">${r.qty}</td><td class="num">${money(doorLine(r))}</td></tr>`, ['SKU','Description','Type','Size','Qty','Total'])}
   ${e.trim.length?'<h3>Trim & Molding</h3>':''}
-  ${rows(e.trim, r=>`<tr><td>${esc(r.desc)||esc(r.profile)}</td><td>${esc(r.profile)}</td><td class="num">${r.lf} LF</td><td class="num">${money(trimLine(r))}</td></tr>`, ['Description','Profile','Linear Ft','Total'])}
+  ${rows(e.trim, r=>`<tr><td>${esc(r.sku)}</td><td>${esc(r.desc)||esc(r.profile)}</td><td>${esc(r.profile)}</td><td class="num">${r.lf} LF</td><td class="num">${money(trimLine(r))}</td></tr>`, ['SKU','Description','Profile','Linear Ft','Total'])}
   ${e.millwork.length?'<h3>Custom Millwork</h3>':''}
-  ${rows(e.millwork, r=>`<tr><td>${esc(r.desc)}</td><td class="num">${r.qty}</td><td class="num">${money(millLine(r))}</td></tr>`, ['Description','Qty','Total'])}
+  ${rows(e.millwork, r=>`<tr><td>${esc(r.sku)}</td><td>${esc(r.desc)}</td><td class="num">${r.qty}</td><td class="num">${money(millLine(r))}</td></tr>`, ['SKU','Description','Qty','Total'])}
   <div class="totals">
     <div class="row"><span class="lbl">Materials</span><span>${money(t.materials)}</span></div>
     <div class="row"><span class="lbl">Labor</span><span>${money(t.labor)}</span></div>
@@ -463,6 +572,9 @@ function renderCatalog(){
   $('catDoors').innerHTML = catalog.doorTypes.map((d,i)=>`<div><label>${esc(d.name)}</label>
     <input type="number" step="5" value="${d.price}" onchange="catalog.doorTypes[${i}].price=+this.value; saveCatalog()"></div>`).join('');
   $('cLabor').value=catalog.laborRate; $('cWaste').value=catalog.wastePct; $('cMarkup').value=catalog.markupPct; $('cTax').value=catalog.taxPct;
+  $('catSkus').innerHTML = SKU_GROUPS.map(g=>`<div><h3 style="margin:6px 0 6px; color:var(--accent-dark)">${g}</h3>
+    <table><thead><tr><th>Product Code</th><th>Description</th><th>UOM</th></tr></thead><tbody>
+    ${SO_SKUS.filter(s=>s[3]===g).map(([c,d,u])=>`<tr><td><strong>${c}</strong></td><td>${d}</td><td>${u}</td></tr>`).join('')}</tbody></table></div>`).join('');
 }
 function renderSettings(){
   $('sName').value=company.name||''; $('sPhone').value=company.phone||''; $('sEmail').value=company.email||'';

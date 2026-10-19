@@ -9,6 +9,7 @@ A free estimating platform for **interior trim, millwork, and doors** contractor
 - **Custom millwork** — built-ins, shelving, wainscoting, stair parts
 - Automatic totals: materials, labor, markup/overhead & profit, and sales tax
 - **Price catalog** — set your own default supplier prices and labor rates
+- **Special order SKUs** — every door, trim and millwork line carries its SO product code (SO INT DOOR, SO MILLWORK (LF)…), with a Special Order Entry list you can copy straight into the order. The full code list, by category, is on the Price Catalog page and in `so-skus.csv` (with cleanup notes for the ERP records)
 - **Print / Save as PDF** — clean, client-ready estimate with your company info and a signature line
 - Track estimate status: Draft, Sent, Won, Lost
 - Backup & restore all your data with one click
